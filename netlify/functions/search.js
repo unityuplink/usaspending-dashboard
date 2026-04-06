@@ -18,7 +18,12 @@ exports.handler = async function(event) {
   }
 
   return new Promise((resolve) => {
-    const body = event.body || '{}';
+    const body = event.body || JSON.stringify({
+      filters: { time_period: [{ start_date: '2024-10-01', end_date: '2025-09-30' }] },
+      fields: ['Award ID', 'Recipient Name', 'Award Amount', 'Awarding Agency', 'Award Type', 'Description', 'Start Date'],
+      sort: 'Award Amount', order: 'desc', limit: 25, page: 1
+    });
+
     const options = {
       hostname: 'api.usaspending.gov',
       path: '/api/v2/search/spending_by_award/',
@@ -33,6 +38,8 @@ exports.handler = async function(event) {
       let data = '';
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
+        console.log('STATUS:', res.statusCode);
+        console.log('RESPONSE PREVIEW:', data.slice(0, 500));
         try {
           const parsed = JSON.parse(data);
           resolve({
@@ -47,13 +54,14 @@ exports.handler = async function(event) {
           resolve({
             statusCode: 500,
             headers: { 'Access-Control-Allow-Origin': '*' },
-            body: JSON.stringify({ error: 'Parse error', raw: data.slice(0, 200) })
+            body: JSON.stringify({ error: 'Parse error', raw: data.slice(0, 500) })
           });
         }
       });
     });
 
     req.on('error', (e) => {
+      console.log('REQUEST ERROR:', e.message);
       resolve({
         statusCode: 500,
         headers: { 'Access-Control-Allow-Origin': '*' },
