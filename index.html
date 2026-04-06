@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>USASpending Market Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0a1628;
+    --navy-mid: #112240;
+    --navy-light: #1a3459;
+    --accent: #00d4aa;
+    --accent-dim: #00a882;
+    --accent-glow: rgba(0,212,170,0.12);
+    --text: #e8edf5;
+    --text-muted: #7a93b4;
+    --text-dim: #4a6080;
+    --border: rgba(0,212,170,0.15);
+    --border-soft: rgba(255,255,255,0.06);
+    --gold: #f0a500;
+  }
+
+  html { background: var(--navy); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; min-height: 100vh; }
+
+  body { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* Header */
+  .header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 0.5px solid var(--border); }
+  .header-left h1 { font-family: 'Instrument Serif', serif; font-size: 2rem; font-weight: 400; color: var(--text); letter-spacing: -0.01em; }
+  .header-left h1 em { color: var(--accent); font-style: italic; }
+  .header-left p { font-size: 12px; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .header-badge { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent); border: 0.5px solid var(--accent); padding: 4px 10px; border-radius: 2px; letter-spacing: 0.08em; }
+
+  /* Filters */
+  .filters { background: var(--navy-mid); border: 0.5px solid var(--border-soft); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  @media (max-width: 700px) { .filter-grid { grid-template-columns: 1fr; } }
+  .filter-block { }
+  .filter-block.full { grid-column: 1 / -1; }
+  .filter-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+
+  .pill-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { padding: 5px 12px; font-size: 12px; border-radius: 2px; border: 0.5px solid var(--border-soft); cursor: pointer; background: transparent; color: var(--text-muted); transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+  .pill:hover { border-color: var(--accent); color: var(--accent); }
+  .pill.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+
+  .input-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  input[type=text], select {
+    background: rgba(255,255,255,0.04);
+    border: 0.5px solid var(--border-soft);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    height: 34px;
+    padding: 0 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type=text]:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--navy-mid); }
+
+  .naics-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .ntag { display: inline-flex; align-items: center; gap: 5px; background: var(--accent-glow); border: 0.5px solid var(--accent); color: var(--accent); border-radius: 2px; padding: 3px 8px; font-size: 11px; font-family: 'DM Mono', monospace; }
+  .ntag .rm { cursor: pointer; opacity: 0.6; font-size: 13px; line-height: 1; }
+  .ntag .rm:hover { opacity: 1; }
+
+  .search-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 0.5px solid var(--border-soft); }
+  input.keyword { flex: 1; min-width: 200px; }
+
+  .btn { height: 34px; padding: 0 18px; font-size: 13px; font-family: 'DM Sans', sans-serif; border-radius: 4px; cursor: pointer; border: none; transition: all 0.15s; font-weight: 500; }
+  .btn-accent { background: var(--accent); color: var(--navy); }
+  .btn-accent:hover { background: #00ffe6; }
+  .btn-ghost { background: transparent; border: 0.5px solid var(--border-soft); color: var(--text-muted); }
+  .btn-ghost:hover { border-color: var(--text-muted); color: var(--text); }
+  .btn-sm { height: 28px; padding: 0 12px; font-size: 11px; }
+
+  /* Metrics */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+  @media (max-width: 700px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+  .metric { background: var(--navy-mid); border: 0.5px solid var(--border-soft); border-radius: 6px; padding: 1rem 1.25rem; }
+  .metric-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .metric-value { font-size: 24px; font-weight: 300; color: var(--accent); letter-spacing: -0.02em; }
+  .metric-value.sm { font-size: 14px; font-weight: 400; padding-top: 4px; }
+  .metric-sub { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+
+  /* Main grid */
+  .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  @media (max-width: 700px) { .main-grid { grid-template-columns: 1fr; } }
+
+  .card { background: var(--navy-mid); border: 0.5px solid var(--border-soft); border-radius: 6px; padding: 1.25rem; }
+  .card-full { grid-column: 1 / -1; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .card-title { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* Awards table */
+  .awards-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .awards-table th { text-align: left; color: var(--text-dim); font-weight: 400; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding: 0 8px 8px 0; border-bottom: 0.5px solid var(--border-soft); }
+  .awards-table td { padding: 9px 8px 9px 0; border-bottom: 0.5px solid rgba(255,255,255,0.04); vertical-align: top; color: var(--text); }
+  .awards-table tr:last-child td { border-bottom: none; }
+  .awards-table .recip { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .awards-table .agency-tag { font-size: 10px; color: var(--text-dim); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .amt { color: var(--accent); font-family: 'DM Mono', monospace; font-size: 12px; white-space: nowrap; text-align: right; }
+
+  /* Bar charts */
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-label { font-size: 11px; color: var(--text-muted); width: 140px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { flex: 1; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.5s ease; }
+  .bar-fill.gold { background: var(--gold); }
+  .bar-val { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; width: 64px; text-align: right; flex-shrink: 0; }
+
+  /* Status */
+  .status { text-align: center; padding: 2.5rem 0; color: var(--text-dim); font-size: 13px; }
+  .status.loading { color: var(--accent); }
+  .status.error { color: #e05a5a; }
+
+  /* Export */
+  .export-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+
+  /* Pagination */
+  .pagination { display: flex; align-items: center; gap: 8px; justify-content: center; margin-top: 12px; font-size: 12px; color: var(--text-muted); }
+  .page-btn { background: transparent; border: 0.5px solid var(--border-soft); color: var(--text-muted); border-radius: 3px; padding: 4px 10px; cursor: pointer; font-size: 12px; font-family: 'DM Sans', sans-serif; }
+  .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .page-btn:disabled { opacity: 0.3; cursor: default; }
+
+  /* Footer */
+  .footer { text-align: right; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-dim); margin-top: 2rem; letter-spacing: 0.06em; }
+
+  /* Dot indicator */
+  .live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .hint { font-size: 11px; color: var(--text-dim); margin-top: 5px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>USASpending <em>Market Intel</em></h1>
+    <p><span class="live-dot"></span>Live federal contract data · Unity Link Corp</p>
+  </div>
+  <div class="header-badge">USASPENDING.GOV API</div>
+</div>
+
+<!-- Filters -->
+<div class="filters">
+  <div class="filter-grid">
+    <div class="filter-block">
+      <div class="filter-label">Agency</div>
+      <div class="pill-wrap" id="agencyPills">
+        <div class="pill active" data-agency="" data-name="All Agencies">All agencies</div>
+        <div class="pill" data-agency="097" data-name="Department of Defense">DoD</div>
+        <div class="pill" data-agency="017" data-name="Dept of the Navy">Navy</div>
+        <div class="pill" data-agency="075" data-name="HHS">HHS</div>
+        <div class="pill" data-agency="070" data-name="Dept of Homeland Security">DHS</div>
+        <div class="pill" data-agency="069" data-name="Dept of Transportation">DOT</div>
+        <div class="pill" data-agency="036" data-name="Dept of Veterans Affairs">VA</div>
+        <div class="pill" data-agency="047" data-name="General Services Administration">GSA</div>
+      </div>
+    </div>
+
+    <div class="filter-block">
+      <div class="filter-label">Fiscal year</div>
+      <div class="pill-wrap" id="yearPills">
+        <div class="pill" data-year="2026">FY 2026</div>
+        <div class="pill active" data-year="2025">FY 2025</div>
+        <div class="pill" data-year="2024">FY 2024</div>
+        <div class="pill" data-year="2023">FY 2023</div>
+        <div class="pill" data-year="2022">FY 2022</div>
+      </div>
+    </div>
+
+    <div class="filter-block full">
+      <div class="filter-label">NAICS — quick picks</div>
+      <div class="pill-wrap" id="naicsPills">
+        <div class="pill" data-naics="541512">541512 · IT consulting</div>
+        <div class="pill" data-naics="541519">541519 · IT services</div>
+        <div class="pill" data-naics="541611">541611 · Mgmt consulting</div>
+        <div class="pill" data-naics="518210">518210 · Cloud computing</div>
+        <div class="pill" data-naics="561621">561621 · Security systems</div>
+        <div class="pill" data-naics="541330">541330 · Engineering</div>
+        <div class="pill" data-naics="541715">541715 · R&amp;D (physical sci)</div>
+        <div class="pill" data-naics="561210">561210 · Facilities mgmt</div>
+      </div>
+    </div>
+
+    <div class="filter-block full">
+      <div class="filter-label">NAICS — enter any 6-digit code</div>
+      <div class="input-row">
+        <input type="text" id="naicsInput" placeholder="e.g. 541715" maxlength="6" style="width:120px;" />
+        <button class="btn btn-ghost btn-sm" onclick="addNaics()">+ Add</button>
+      </div>
+      <div class="naics-tags" id="naicsTags"></div>
+      <div class="hint">Select multiple NAICS codes — results will include all selected codes</div>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" class="keyword" id="keywordInput" placeholder="Keyword search: cybersecurity, RMF, zero trust, cloud migration..." />
+    <button class="btn btn-ghost" onclick="resetAll()">Reset</button>
+    <button class="btn btn-accent" onclick="runSearch(1)">Search →</button>
+  </div>
+</div>
+
+<!-- Metrics -->
+<div class="metrics">
+  <div class="metric"><div class="metric-label">Total awards</div><div class="metric-value" id="mCount">—</div><div class="metric-sub">in results</div></div>
+  <div class="metric"><div class="metric-label">Total obligated</div><div class="metric-value" id="mTotal">—</div><div class="metric-sub">federal dollars</div></div>
+  <div class="metric"><div class="metric-label">Avg award size</div><div class="metric-value" id="mAvg">—</div><div class="metric-sub">per contract</div></div>
+  <div class="metric"><div class="metric-label">Top recipient</div><div class="metric-value sm" id="mTop">—</div><div class="metric-sub" id="mTopAmt"></div></div>
+</div>
+
+<!-- Main grid -->
+<div class="main-grid">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Recent awards</div>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">Export CSV</button>
+    </div>
+    <div id="awardsPanel"><div class="status">Configure filters and search to load data</div></div>
+    <div class="pagination" id="pagination" style="display:none;">
+      <button class="page-btn" id="prevBtn" onclick="changePage(-1)" disabled>← Prev</button>
+      <span id="pageInfo">Page 1</span>
+      <button class="page-btn" id="nextBtn" onclick="changePage(1)">Next →</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">Top recipients (competitor intel)</div></div>
+    <div id="recipientsPanel"><div class="status">—</div></div>
+  </div>
+
+  <div class="card card-full">
+    <div class="card-header"><div class="card-title">Spending by awarding agency</div></div>
+    <div id="agencyChart"><div class="status">—</div></div>
+  </div>
+</div>
+
+<div class="footer">Data source: USASpending.gov public API · Unity Link Corp market research tool</div>
+
+<script>
+let activeAgency = '';
+let activeYear = '2025';
+let activePillNaics = new Set();
+let customNaics = new Set();
+let currentPage = 1;
+let lastResults = [];
+let hasMore = false;
+
+// Agency pills
+document.querySelectorAll('#agencyPills .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#agencyPills .pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    activeAgency = p.dataset.agency;
+  });
+});
+
+// Year pills
+document.querySelectorAll('#yearPills .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#yearPills .pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    activeYear = p.dataset.year;
+  });
+});
+
+// NAICS pills (multi-select)
+document.querySelectorAll('#naicsPills .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    p.classList.toggle('active');
+    if (p.classList.contains('active')) activePillNaics.add(p.dataset.naics);
+    else activePillNaics.delete(p.dataset.naics);
+  });
+});
+
+document.getElementById('naicsInput').addEventListener('keydown', e => { if (e.key === 'Enter') addNaics(); });
+
+function addNaics() {
+  const input = document.getElementById('naicsInput');
+  const val = input.value.trim().replace(/\D/g, '');
+  if (!val || val.length !== 6) {
+    input.style.borderColor = '#e05a5a';
+    setTimeout(() => input.style.borderColor = '', 1500);
+    return;
+  }
+  customNaics.add(val);
+  renderNaicsTags();
+  input.value = '';
+}
+
+function removeNaics(code) { customNaics.delete(code); renderNaicsTags(); }
+
+function renderNaicsTags() {
+  document.getElementById('naicsTags').innerHTML = [...customNaics].map(c =>
+    `<span class="ntag">${c}<span class="rm" onclick="removeNaics('${c}')">×</span></span>`
+  ).join('');
+}
+
+function getAllNaics() { return [...activePillNaics, ...customNaics]; }
+
+function fmt(n) {
+  if (!n) return '$0';
+  if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function setStatus(id, msg, type) {
+  document.getElementById(id).innerHTML = `<div class="status ${type || ''}">${msg}</div>`;
+}
+
+function clearMetrics() {
+  ['mCount','mTotal','mAvg','mTop','mTopAmt'].forEach(id => document.getElementById(id).textContent = '—');
+}
+
+function resetAll() {
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  document.querySelector('#agencyPills .pill[data-agency=""]').classList.add('active');
+  document.querySelector('#yearPills .pill[data-year="2025"]').classList.add('active');
+  activeAgency = ''; activeYear = '2025';
+  activePillNaics.clear(); customNaics.clear();
+  renderNaicsTags();
+  document.getElementById('keywordInput').value = '';
+  clearMetrics();
+  setStatus('awardsPanel', 'Configure filters and search to load data');
+  setStatus('recipientsPanel', '—');
+  setStatus('agencyChart', '—');
+  document.getElementById('pagination').style.display = 'none';
+  lastResults = [];
+}
+
+async function runSearch(page) {
+  currentPage = page || 1;
+  const keyword = document.getElementById('keywordInput').value.trim();
+  const naics = getAllNaics();
+  const year = parseInt(activeYear);
+
+  setStatus('awardsPanel', 'Loading...', 'loading');
+  setStatus('recipientsPanel', 'Loading...', 'loading');
+  setStatus('agencyChart', 'Loading...', 'loading');
+  if (currentPage === 1) clearMetrics();
+
+  const filters = {
+    time_period: [{ start_date: `${year - 1}-10-01`, end_date: `${year}-09-30` }]
+  };
+  if (activeAgency) filters.agencies = [{ type: 'awarding', tier: 'toptier', toptier_code: activeAgency }];
+  if (naics.length) filters.naics_codes = naics;
+  if (keyword) filters.keywords = [keyword];
+
+  try {
+    const res = await fetch('https://api.usaspending.gov/api/v2/search/spending_by_award/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filters,
+        fields: ['Award ID', 'Recipient Name', 'Award Amount', 'Awarding Agency', 'Award Type', 'Description', 'Start Date'],
+        sort: 'Award Amount',
+        order: 'desc',
+        limit: 25,
+        page: currentPage
+      })
+    });
+    const data = await res.json();
+    const results = data.results || [];
+    lastResults = results;
+    hasMore = results.length === 25;
+
+    if (!results.length && currentPage === 1) {
+      setStatus('awardsPanel', 'No results found. Try broadening your filters.');
+      setStatus('recipientsPanel', '—');
+      setStatus('agencyChart', '—');
+      document.getElementById('pagination').style.display = 'none';
+      return;
+    }
+
+    renderAwards(results);
+    renderRecipients(results);
+    renderAgencyBars(results);
+    if (currentPage === 1) renderMetrics(results);
+
+    // Pagination
+    const pg = document.getElementById('pagination');
+    pg.style.display = 'flex';
+    document.getElementById('pageInfo').textContent = `Page ${currentPage}`;
+    document.getElementById('prevBtn').disabled = currentPage === 1;
+    document.getElementById('nextBtn').disabled = !hasMore;
+
+  } catch (e) {
+    setStatus('awardsPanel', 'API error — check your connection and try again.', 'error');
+    setStatus('recipientsPanel', '—', 'error');
+    setStatus('agencyChart', '—', 'error');
+  }
+}
+
+function changePage(dir) {
+  runSearch(currentPage + dir);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderMetrics(results) {
+  const total = results.reduce((s, r) => s + (r['Award Amount'] || 0), 0);
+  const map = {};
+  results.forEach(r => {
+    const n = r['Recipient Name'] || 'Unknown';
+    map[n] = (map[n] || 0) + (r['Award Amount'] || 0);
+  });
+  const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]);
+  document.getElementById('mCount').textContent = results.length + (hasMore ? '+' : '');
+  document.getElementById('mTotal').textContent = fmt(total);
+  document.getElementById('mAvg').textContent = fmt(total / results.length);
+  const topName = sorted[0]?.[0] || '—';
+  document.getElementById('mTop').textContent = topName.length > 20 ? topName.slice(0, 18) + '…' : topName;
+  document.getElementById('mTopAmt').textContent = sorted[0] ? fmt(sorted[0][1]) : '';
+}
+
+function renderAwards(results) {
+  if (!results.length) { setStatus('awardsPanel', 'No results on this page.'); return; }
+  const rows = results.map(r => {
+    const desc = (r['Description'] || r['Award ID'] || '—').slice(0, 65);
+    return `<tr>
+      <td>
+        <div>${desc}${(r['Description'] || '').length > 65 ? '…' : ''}</div>
+        <div class="recip">${r['Recipient Name'] || '—'}</div>
+        <div class="agency-tag">${r['Awarding Agency'] || ''} · ${r['Start Date'] || ''}</div>
+      </td>
+      <td class="amt">${fmt(r['Award Amount'] || 0)}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('awardsPanel').innerHTML =
+    `<table class="awards-table"><thead><tr><th>Award / recipient</th><th style="text-align:right">Obligated</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderRecipients(results) {
+  const map = {};
+  results.forEach(r => {
+    const n = r['Recipient Name'] || 'Unknown';
+    map[n] = (map[n] || 0) + (r['Award Amount'] || 0);
+  });
+  const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  if (!sorted.length) { setStatus('recipientsPanel', '—'); return; }
+  const max = sorted[0][1];
+  document.getElementById('recipientsPanel').innerHTML = sorted.map(([name, val], i) =>
+    `<div class="bar-row">
+      <div class="bar-label" title="${name}">${name}</div>
+      <div class="bar-track"><div class="bar-fill${i === 0 ? ' gold' : ''}" style="width:${Math.round(val / max * 100)}%"></div></div>
+      <div class="bar-val">${fmt(val)}</div>
+    </div>`
+  ).join('');
+}
+
+function renderAgencyBars(results) {
+  const map = {};
+  results.forEach(r => {
+    const a = r['Awarding Agency'] || 'Unknown';
+    map[a] = (map[a] || 0) + (r['Award Amount'] || 0);
+  });
+  const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  if (!sorted.length) { setStatus('agencyChart', '—'); return; }
+  const max = sorted[0][1];
+  document.getElementById('agencyChart').innerHTML = sorted.map(([name, val]) =>
+    `<div class="bar-row">
+      <div class="bar-label" title="${name}">${name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(val / max * 100)}%; background: #00a882;"></div></div>
+      <div class="bar-val">${fmt(val)}</div>
+    </div>`
+  ).join('');
+}
+
+function exportCSV() {
+  if (!lastResults.length) return;
+  const headers = ['Award ID', 'Recipient Name', 'Award Amount', 'Awarding Agency', 'Award Type', 'Description', 'Start Date'];
+  const rows = lastResults.map(r => headers.map(h => `"${(r[h] || '').toString().replace(/"/g, '""')}"`).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `usaspending_${activeYear}_page${currentPage}.csv`;
+  a.click();
+}
+</script>
+</body>
+</html>
